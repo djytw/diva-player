@@ -58,8 +58,10 @@ class ObjectSet{
             var pos = st.getpos();
             st.setpos(objpos);
             var obj = new Object(id, st, name);
-            st.setpos(skinpos);
-            obj.Skin = new Skin(st)
+            if (skinpos != 0){
+                st.setpos(skinpos);
+                obj.Skin = new Skin(st)
+            }
             objects.push(obj);
             st.setpos(pos);
         }
