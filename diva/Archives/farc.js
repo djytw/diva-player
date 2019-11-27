@@ -12,7 +12,7 @@
  */
 
 var pako;
-if (window.pako != undefined) pako = window.pako;
+if (typeof window != 'undefined' && window.pako != undefined) pako = window.pako;
 else pako = require('pako');
 var Stream = require('../Utils/stream')
 

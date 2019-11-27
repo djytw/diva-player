@@ -1,7 +1,7 @@
 'use strict';
 
 var THREE;
-if (window.THREE != undefined) THREE = window.THREE;
+if (typeof window != 'undefined' && window.THREE != undefined) THREE = window.THREE;
 else THREE = require('three');
 class Stream{
     constructor(dv){
