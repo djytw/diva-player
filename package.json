@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "aesjs": "^1.0.0",
     "pako": "^1.0.10",
     "three": "^0.110.0"
   },

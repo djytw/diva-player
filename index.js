@@ -13,14 +13,13 @@ DIVA.Texture = require('./diva/Textures/Texture');
 DIVA.SubTexture = require('./diva/Textures/SubTexture');
 DIVA.Utils = require('./diva/Utils/util');
 
-const fs = require('fs')
+//const fs = require('fs')
 
 //var file = fs.readFileSync('X:\\pdaft\\rom\\objset\\cmnitm1038.farc');
 //var files = FarcArchive.Read(toArrayBuffer(file));
 
-var file = fs.readFileSync('test/cmnitm1038_tex.bin');
-DIVA.TextureSet.Read(DIVA.Utils.toArrayBuffer(file));
-debugger;
+//var file = fs.readFileSync('test/cmnitm1038_tex.bin');
+//DIVA.TextureSet.Read(DIVA.Utils.toArrayBuffer(file));
 
 
 module.exports = DIVA;
