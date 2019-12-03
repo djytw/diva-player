@@ -13,6 +13,7 @@ class Skin{
     }
     Read(st){
         var boneIdsOffset = st.getUint32();
+        debugger;
         var boneMatricesOffset = st.getUint32();
         var boneNamesOffset = st.getUint32();
         var meshExDataOffset = st.getUint32();
@@ -30,11 +31,15 @@ class Skin{
         }
         st.setpos(boneNamesOffset);
         for (i = 0; i< boneCount; i++){
+            this.Bones[i].NameOffset = st.getUint32();
+        }
+        for (i = 0; i< boneCount; i++){
+            st.setpos(this.Bones[i].NameOffset);
             this.Bones[i].Name = st.getString();
         }
         st.setpos(boneParentIdsOffset);
         for (i = 0; i< boneCount; i++){
-            this.Bones[i].ParentId = st.getUint32();
+            this.Bones[i].ParentId = st.getInt32();
         }
         
         st.setpos(meshExDataOffset);
@@ -42,6 +47,8 @@ class Skin{
     }
 }
 class BoneInfo{
-    
+    constructor(id){
+        this.id = id;
+    }
 }
 module.exports = Skin;

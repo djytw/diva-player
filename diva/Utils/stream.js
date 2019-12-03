@@ -76,6 +76,15 @@ class Stream{
         }
         return ret;
     }
+    getInt32(pos){
+        if (pos == undefined){
+            var r = this.dataView.getInt32(this.pc, this.endian);
+            this.pc += 4;
+            return r;
+        }else{
+            return this.dataView.getInt32(pos, this.endian);
+        }
+    }
     getUint32(pos){
         if (pos == undefined){
             var r = this.dataView.getUint32(this.pc, this.endian);
