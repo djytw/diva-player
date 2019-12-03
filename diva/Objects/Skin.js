@@ -13,7 +13,6 @@ class Skin{
     }
     Read(st){
         var boneIdsOffset = st.getUint32();
-        debugger;
         var boneMatricesOffset = st.getUint32();
         var boneNamesOffset = st.getUint32();
         var meshExDataOffset = st.getUint32();

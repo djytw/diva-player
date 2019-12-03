@@ -43,7 +43,10 @@
         }
         window.testf = test;
             function init() {
-                renderer = new THREE.WebGLRenderer( { antialias: true } );
+				var canvas = document.createElement( 'canvas' );
+				var context = canvas.getContext( 'webgl2', { alpha: false, antialias: true } );
+
+                renderer = new THREE.WebGLRenderer( { canvas: canvas, context: context });
                 renderer.setPixelRatio( window.devicePixelRatio );
                 renderer.setSize( window.innerWidth, window.innerHeight );
                 document.body.appendChild( renderer.domElement );
@@ -79,6 +82,7 @@
                         var material = new THREE.MeshPhongMaterial( { shininess: 80, color:0xffffff } );
                         var mesh = new THREE.Mesh( bufferGeometry, material );
                         mesh.drawMode = THREE.TriangleStripDrawMode;
+                        debugger
                         scene.add( mesh );
                     }
                 }
