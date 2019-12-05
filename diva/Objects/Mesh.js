@@ -10,17 +10,7 @@ class Mesh{
     constructor(data, pos){
         if (data instanceof Stream == false)
             throw "illegal param";
-        this.BoundingSphere = undefined;
         this.SubMeshes = [];
-        this.Vertex = undefined;
-        this.Normal = undefined;
-        this.Tangent = undefined;
-        this.UVChannel1 = undefined;
-        this.UVChannel2 = undefined;
-        this.Color = [];
-        this.BoneWeights = [];
-        this.Name = undefined;
-        this.vertexCount = undefined;
         this.pos = pos;
         this.Read(data);
     }
@@ -29,24 +19,24 @@ class Mesh{
         if (sign != 0x00000000)
             throw "not a Mesh! file may be corrupted";
         this.BoundingSphere = st.getBoundingSphere();
-        var subMeshCount = st.getUint32();
-        var subMeshOffset = st.getUint32() + this.pos;
-        var attributes = st.getUint32();
-        var stride = st.getUint32();
+        this.subMeshCount = st.getUint32();
+        this.subMeshOffset = st.getUint32();
+        this.attributes = st.getUint32();
+        this.stride = st.getUint32();
         this.vertexCount = st.getUint32();
-        var elemItems = st.getUint32s(28);
+        this.elemItems = st.getUint32s(28);
         this.Name = st.getString(64);
 
         var i;
-        for (i = 0; i < subMeshCount; i++){
-            st.setpos(subMeshOffset + i * SubMesh.getSize());
+        for (i = 0; i < this.subMeshCount; i++){
+            st.setpos(this.subMeshOffset + this.pos + i * SubMesh.getSize());
             this.SubMeshes.push(new SubMesh(st, this.pos));
         }
         var pos = st.getpos();
         for (i = 0; i < 28; i++){
-            if ((attributes & (1 << i)) == 0)
+            if ((this.attributes & (1 << i)) == 0)
                 continue;
-            st.setpos(elemItems[i] + this.pos);
+            st.setpos(this.elemItems[i] + this.pos);
             this[Mesh.vertexAttributes[i]] = this._readAttr(st, i);
         }
         st.setpos(pos);

@@ -9,12 +9,6 @@ class SubMesh {
     constructor(data, pos){
         if (data instanceof Stream == false)
             throw "illegal param";
-        this.BoundingSphere = undefined;
-        this.Indices = undefined;
-        this.BoneIndices = undefined;
-        this.MaterialIndex = undefined;
-        this.MaterialUVIndices = undefined;
-        this.PrimitiveType = undefined;
         this.pos = pos;
         this.Read(data);
     }
@@ -26,20 +20,20 @@ class SubMesh {
         this.BoundingSphere = st.getBoundingSphere();
         this.MaterialIndex = st.getUint32();
         this.MaterialUVIndices = st.getUint8s(8);
-        var boneIndexCount = st.getUint32();
-        var boneIndicesOffset = st.getUint32();
-        var field00 = st.getUint32();
+        this.boneIndexCount = st.getUint32();
+        this.boneIndicesOffset = st.getUint32();
+        this.field00 = st.getUint32();
         this.PrimitiveType = st.getUint32();
-        var field01 = st.getUint32();
-        var indexCount = st.getUint32();
-        var indicesOffset = st.getUint32();
+        this.field01 = st.getUint32();
+        this.indexCount = st.getUint32();
+        this.indicesOffset = st.getUint32();
 
-        if (field00 == 4){
-            st.setpos(boneIndicesOffset + this.pos);
-            this.BoneIndices = st.getUint16s(boneIndexCount);
+        if (this.field00 == 4){
+            st.setpos(this.boneIndicesOffset + this.pos);
+            this.BoneIndices = st.getUint16s(this.boneIndexCount);
         }
-        st.setpos(indicesOffset + this.pos);
-        this.Indices = st.getUint16s(indexCount);
+        st.setpos(this.indicesOffset + this.pos);
+        this.Indices = st.getUint16s(this.indexCount);
     }
 }
 module.exports = SubMesh;

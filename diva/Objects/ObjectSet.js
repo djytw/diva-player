@@ -69,7 +69,7 @@ class ObjectSet{
         for (i = 0; i < texCount; i++){
             tids.push(st.getUint32(texIdOffset + i * 4));
         }
-        return objects;
+        return [objects,tids];
     }
 }
 module.exports = ObjectSet;

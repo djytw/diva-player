@@ -20,12 +20,22 @@
                     var ret = DIVA.FarcArchive.Read(reader.result);
                     console.timeEnd("extract farc")
                     console.log(ret)
-                    if (ret[0].fname.endsWith("_obj.bin")){
+                    if (ret[0].fname.endsWith("_obj.bin") && ret[1].fname.endsWith("_tex.bin")){
                         console.time("loading objects")
-                        var obj = DIVA.ObjectSet.Read(ret[0].content.buffer);
+                        var re = DIVA.ObjectSet.Read(ret[0].content.buffer);
+                        var texid = re[1];
+                        var obj = re[0];
                         console.timeEnd("loading objects")
+                        console.time("loading textures")
+                        var tex = DIVA.TextureSet.Read(ret[1].content.buffer);
+                        console.timeEnd("loading textures")
                         console.log(obj)
+                        console.log(tex)
                         window.DIVAobj = obj;
+                        window.DIVAtex = [];
+                        for (var i in texid){
+                            window.DIVAtex[texid[i]] = tex[i];
+                        }
                         window.testf();
                     }
                 }, false);
@@ -79,11 +89,38 @@
                         bufferGeometry.setAttribute( 'uv', new THREE.Float32BufferAttribute( mesh.UVChannel, 2 ) );
                         bufferGeometry.setAttribute( 'tangent', new THREE.Float32BufferAttribute( mesh.Tangent, 4 ) );
                         bufferGeometry.setIndex(mesh.SubMeshes[0].Indices);
-                        var material = new THREE.MeshPhongMaterial( { shininess: 80, color:0xffffff } );
-                        var mesh = new THREE.Mesh( bufferGeometry, material );
-                        mesh.drawMode = THREE.TriangleStripDrawMode;
-                        debugger
-                        scene.add( mesh );
+
+                        var materialdata = obj.Materials[mesh.SubMeshes[0].MaterialIndex];
+                        var material;
+                        switch (materialdata.Shader){
+                            case "CLOTH":
+                                //map:Diffuse normal:Normal envmap:Reflection specular:Specular
+                                var Diffuse = window.DIVAtex[materialdata.Diffuse.TextureId];
+                                var map = new THREE.CompressedTexture();
+                                map.mipmaps = [];
+                                switch (Diffuse.SubTextures[0][0].Format){
+                                    case 6: map.format = THREE.RGB_S3TC_DXT1_Format;break;
+                                    case 9: map.format = THREE.RGBA_S3TC_DXT5_Format;break;
+                                    default: throw "Unsupported format: "+Diffuse.SubTextures[0][0].Format;
+                                }
+                                for (var i = 0; i < Diffuse.MipMapCount; i++)
+                                    map.mipmaps.push({
+                                        "width": Diffuse.SubTextures[0][i].Width,
+                                        "height": Diffuse.SubTextures[0][i].Height,
+                                        "data": Diffuse.SubTextures[0][i].Data
+                                    })
+                                map.image.width = map.mipmaps[0].width;
+                                map.image.height = map.mipmaps[0].height;
+
+                                material = new THREE.MeshBasicMaterial( { map: map } );
+                                break;
+                            default:
+                                material = new THREE.MeshPhongMaterial( { shininess: 80, color:0xffffff } );
+                        }
+
+                        var mes = new THREE.Mesh( bufferGeometry, material );
+                        mes.drawMode = THREE.TriangleStripDrawMode;
+                        scene.add( mes );
                     }
                 }
             }

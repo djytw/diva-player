@@ -10,10 +10,7 @@ class Object{
             throw "illegal param";
         this.id = id;
         this.name = name;
-        this.Meshes = [];
-        this.Materials = [];
         this.pos = data.getpos();
-        this.BoundingSphere = undefined;
         this.Read(data)
     }
     Read(st){
@@ -22,21 +19,22 @@ class Object{
             throw "not an Object! file may be corrupted";
         st.getUint32();
         this.BoundingSphere = st.getBoundingSphere();
-        var meshCount = st.getUint32();
-        var meshOffset = st.getUint32() + this.pos;
-        var materialCount = st.getUint32();
-        var materialsOffset = st.getUint32() + this.pos;
+        this.meshCount = st.getUint32();
+        this.meshOffset = st.getUint32();
+        this.materialCount = st.getUint32();
+        this.materialsOffset = st.getUint32();
 
         var i;
         var pos = st.getpos();
-        for (i = 0; i < meshCount; i++){
-            st.setpos(meshOffset + i * Mesh.getSize());
+        this.Meshes = [];
+        for (i = 0; i < this.meshCount; i++){
+            st.setpos(this.meshOffset + this.pos + i * Mesh.getSize());
             this.Meshes.push(new Mesh(st, this.pos));
         }
         st.setpos(pos);
-
-        for (i = 0; i < materialCount; i++){
-            st.setpos(materialsOffset + i * Material.getSize());
+        this.Materials = [];
+        for (i = 0; i < this.materialCount; i++){
+            st.setpos(this.materialsOffset + this.pos + i * Material.getSize());
             this.Materials.push(new Material(st));
         }
     }

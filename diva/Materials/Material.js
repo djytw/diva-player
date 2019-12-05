@@ -56,10 +56,10 @@ class Material{
     }
     ReadMaterialTexture(st){
         var mt = {};
-        mt.Field00 = st.getUint32();
-        mt.Field01 = st.getUint32();
-        mt.TextureId = st.getUint32();
-        mt.Field02 = st.getUint32();
+        mt.Field00 = st.getInt32();
+        mt.Field01 = st.getInt32();
+        mt.TextureId = st.getInt32();
+        mt.Field02 = st.getInt32();
         mt.Field03 = st.getFloat32();
         mt.Field04 = st.getFloat32();
         mt.Field05 = st.getFloat32();

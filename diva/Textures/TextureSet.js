@@ -39,7 +39,7 @@ class TextureSet{
             st.setpos(texturepos[i]);
             textures[i] = new Texture(st);
         }
-        debugger;
+        return textures;
     }
 }
 
