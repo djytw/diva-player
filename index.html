@@ -86,7 +86,7 @@
                         var bufferGeometry = new THREE.BufferGeometry();
                         bufferGeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( mesh.Vertex, 3 ) );
                         bufferGeometry.setAttribute( 'normal', new THREE.Float32BufferAttribute( mesh.Normal, 3 ) );
-                        bufferGeometry.setAttribute( 'uv', new THREE.Float32BufferAttribute( mesh.UVChannel, 2 ) );
+                        bufferGeometry.setAttribute( 'uv', new THREE.Float32BufferAttribute( mesh.UVChannel1, 2 ) );
                         bufferGeometry.setAttribute( 'tangent', new THREE.Float32BufferAttribute( mesh.Tangent, 4 ) );
                         bufferGeometry.setIndex(mesh.SubMeshes[0].Indices);
 
@@ -111,8 +111,8 @@
                                     })
                                 map.image.width = map.mipmaps[0].width;
                                 map.image.height = map.mipmaps[0].height;
-
-                                material = new THREE.MeshBasicMaterial( { map: map } );
+                                map.version = 1;
+                                material = new THREE.MeshPhongMaterial( { map:map, shininess: 80, color:0xffffff } );
                                 break;
                             default:
                                 material = new THREE.MeshPhongMaterial( { shininess: 80, color:0xffffff } );

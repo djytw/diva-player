@@ -58,9 +58,9 @@ class Stream{
         return r;
     }
     getUint8s(count){
-        var ret = [];
+        var ret = new Uint8Array(count);
         for (var i = 0; i < count; i++){
-            ret.push(this.getUint8());
+            ret[i] = this.getUint8();
         }
         return ret;
     }
