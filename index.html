@@ -80,6 +80,25 @@
                 document.body.appendChild( stats.dom );
                 window.addEventListener( 'resize', onWindowResize, false );
             }
+            function loadTexture(tex){
+                var map = new THREE.CompressedTexture();
+                map.mipmaps = [];
+                switch (tex.SubTextures[0][0].Format){
+                    case 6: map.format = THREE.RGB_S3TC_DXT1_Format;break;
+                    case 9: map.format = THREE.RGBA_S3TC_DXT5_Format;break;
+                    default: throw "Unsupported format: "+tex.SubTextures[0][0].Format;
+                }
+                for (var i = 0; i < tex.MipMapCount; i++)
+                    map.mipmaps.push({
+                        "width": tex.SubTextures[0][i].Width,
+                        "height": tex.SubTextures[0][i].Height,
+                        "data": tex.SubTextures[0][i].Data
+                    })
+                map.image.width = map.mipmaps[0].width;
+                map.image.height = map.mipmaps[0].height;
+                map.version = 1;
+                return map;
+            }
             function createScene() {
                 for (var obj of window.DIVAobj){
                     for(var mesh of obj.Meshes){
@@ -92,31 +111,38 @@
 
                         var materialdata = obj.Materials[mesh.SubMeshes[0].MaterialIndex];
                         var material;
-                        switch (materialdata.Shader){
-                            case "CLOTH":
-                                //map:Diffuse normal:Normal envmap:Reflection specular:Specular
-                                var Diffuse = window.DIVAtex[materialdata.Diffuse.TextureId];
-                                var map = new THREE.CompressedTexture();
-                                map.mipmaps = [];
-                                switch (Diffuse.SubTextures[0][0].Format){
-                                    case 6: map.format = THREE.RGB_S3TC_DXT1_Format;break;
-                                    case 9: map.format = THREE.RGBA_S3TC_DXT5_Format;break;
-                                    default: throw "Unsupported format: "+Diffuse.SubTextures[0][0].Format;
-                                }
-                                for (var i = 0; i < Diffuse.MipMapCount; i++)
-                                    map.mipmaps.push({
-                                        "width": Diffuse.SubTextures[0][i].Width,
-                                        "height": Diffuse.SubTextures[0][i].Height,
-                                        "data": Diffuse.SubTextures[0][i].Data
-                                    })
-                                map.image.width = map.mipmaps[0].width;
-                                map.image.height = map.mipmaps[0].height;
-                                map.version = 1;
-                                material = new THREE.MeshPhongMaterial( { map:map, shininess: 80, color:0xffffff } );
-                                break;
-                            default:
-                                material = new THREE.MeshPhongMaterial( { shininess: 80, color:0xffffff } );
+                        console.log("Loading mesh "+mesh.Name+": type "+materialdata.Shader);
+                        
+                        //map:Diffuse normalMap:Normal envMap:Reflection specularMap:Specular shininess:Shininess
+
+                        var shininess = materialdata.Shininess;
+                        var params = {shininess, color:0xffffff};
+
+                        if(materialdata.Diffuse.TextureId != -1){
+                            var Diffuse = window.DIVAtex[materialdata.Diffuse.TextureId];
+                            params.map = loadTexture(Diffuse);
                         }
+
+                        if(materialdata.Normal.TextureId != -1){
+                            var Normal = window.DIVAtex[materialdata.Normal.TextureId];
+                            // TODO - ATI2 decode
+                            //params.normalMap = loadTexture(Normal);
+                        }
+                        
+                        if(materialdata.Specular.TextureId != -1){
+                            var Specular = window.DIVAtex[materialdata.Specular.TextureId];
+                            params.specularMap = loadTexture(Specular);
+                        }
+                        
+                        if(materialdata.Reflection.TextureId != -1){
+                            var Reflection = window.DIVAtex[materialdata.Reflection.TextureId];
+                            // TODO - map6
+                            //params.envMap = loadTexture(Reflection);
+                        }
+                        
+
+                        material = new THREE.MeshPhongMaterial(params);
+
 
                         var mes = new THREE.Mesh( bufferGeometry, material );
                         mes.drawMode = THREE.TriangleStripDrawMode;
