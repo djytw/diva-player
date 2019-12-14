@@ -44,6 +44,7 @@
     <script type="module">
         var THREE = window.THREE;
         import Stats from './node_modules/three/examples/jsm/libs/stats.module.js';
+        import  { DDSLoader } from './node_modules/three/examples/jsm/loaders/DDSLoader.js';
         import { TrackballControls } from './node_modules/three/examples/jsm/controls/TrackballControls.js';
             var camera, scene, renderer, controls, stats;
 
@@ -86,7 +87,11 @@
                 switch (tex.SubTextures[0][0].Format){
                     case 6: map.format = THREE.RGB_S3TC_DXT1_Format;break;
                     case 9: map.format = THREE.RGBA_S3TC_DXT5_Format;break;
-                    default: throw "Unsupported format: "+tex.SubTextures[0][0].Format;
+                    //var loader = new DDSLoader();
+                    //return loader.load( 'test/Texture25.dds' );
+                    default: 
+                    console.log( "Unsupported format: "+tex.SubTextures[0][0].Format);
+                    return null;
                 }
                 for (var i = 0; i < tex.MipMapCount; i++)
                     map.mipmaps.push({
@@ -121,6 +126,15 @@
                         if(materialdata.Diffuse.TextureId != -1){
                             var Diffuse = window.DIVAtex[materialdata.Diffuse.TextureId];
                             params.map = loadTexture(Diffuse);
+                            if (Diffuse.SubTextures[0][0].Format == 9 && materialdata.Shader =="ITEM"){
+                                params.blending = THREE.AdditiveBlending;
+                            }
+                            if (Diffuse.SubTextures[0][0].Format == 9 && materialdata.Shader =="CLOTH"){
+                                params.blending = THREE.AdditiveBlending;
+                                params.side=THREE.DoubleSide
+                            }
+                            if (Diffuse.SubTextures[0][0].Format == 9)
+                                params.transparent=true
                         }
 
                         if(materialdata.Normal.TextureId != -1){
