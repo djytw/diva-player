@@ -5,6 +5,6 @@ A rewrite of [MikuMikuLibrary](https://github.com/blueskythlikesclouds/MikuMikuL
 # Usage
 
 ```bash
-npm i browserify
+npm install -g browserify
 browserify -r ./index.js:DIVA -i pako -i three -o build/bundle.js
 ```
