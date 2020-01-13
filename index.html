@@ -1,34 +1,107 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <style>
+            *{
+                margin:0;
+                padding:0;
+            }
+            #main_display{
+                width:100vw;
+                height:100vh;
+                background:transparent;
+                z-index:1;
+                position:absolute;
+            }
+            #main_log{
+                max-height:100vh;
+                overflow-y:scroll;
+                width:100vh;
+                background:transparent;
+                border:0;
+                color:black;
+                position:absolute;
+                left: 0px;
+                bottom: 0px;
+                min-height: 1rem;
+                font-size:10px;
+                z-index:0;
+                font-family: Cascadia, Consolas, 'Ubuntu Mono', monospace;
+            }
+            #main_log::-webkit-scrollbar{
+                width:0px;
+            }
+            body{
+                background: #ccc;
+            }
+        </style>
     </head>
     <body>
-        <input type="file" class="file-input" id="fileInput" style="background:#0cf;width:800px;height:400px;">
-  
+        <div id="main_display" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);"></div>
+        <pre id="main_log"></pre>
         <script src="node_modules/pako/dist/pako.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="node_modules/three/build/three.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="build/bundle.js" type="text/javascript" charset="utf-8"></script>
+        <script src="node_modules/three/examples/js/libs/stats.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="node_modules/three/examples/js/loaders/DDSLoader.js" type="text/javascript" charset="utf-8"></script>
+        <script src="node_modules/three/examples/js/controls/TrackballControls.js" type="text/javascript" charset="utf-8"></script>
         <script>
             var DIVA = require("DIVA");
-            fileInput.addEventListener('change', function () {
-                console.time("load file")
+            var camera, scene, renderer, controls, stats;
+
+            function dropHandler(ev) {
+                ev.preventDefault();
+                if (ev.dataTransfer.items) {
+                    for (var i = 0; i < ev.dataTransfer.items.length; i++) {
+                        if (ev.dataTransfer.items[i].kind === 'file') {
+                            var file = ev.dataTransfer.items[i].getAsFile();
+                            openFile(file);
+                            break;
+                        }
+                    }
+                }
+            }
+            function mlog(str){
+                document.getElementById("main_log").innerHTML += str + "\n";
+            }
+            function timeStart(str){
+                if (window.timeCount == undefined){
+                    window.timeCount = [];
+                }
+                window.timeCount[str] = new Date().getTime();
+            }
+            function timeEnd(str){
+                end = new Date().getTime();
+                if (window.timeCount[str] == undefined){
+                    mlog("Undefined timer: " + str);
+                    return;
+                }
+                mlog(str + ": " + (end - window.timeCount[str]) + "ms");
+            }
+            function dragOverHandler(ev) {
+                ev.preventDefault();
+            }
+            function openFile(file) {
+                timeStart("load file");
                 const reader = new FileReader();
-                reader.readAsArrayBuffer(this.files[0]);
+                reader.readAsArrayBuffer(file);
                 reader.addEventListener('load', function () {
-                    console.timeEnd("load file")
-                    console.time("extract farc")
+                    timeEnd("load file")
+                    timeStart("extract farc")
                     var ret = DIVA.FarcArchive.Read(reader.result);
-                    console.timeEnd("extract farc")
-                    console.log(ret)
+                    timeEnd("extract farc")
+                    str = "farc contains " + ret.length + " files: ";
+                    for (f of ret) str += f.fname + ", ";
+                    mlog(str);
                     if (ret[0].fname.endsWith("_obj.bin") && ret[1].fname.endsWith("_tex.bin")){
-                        console.time("loading objects")
+                        timeStart("loading objects")
                         var re = DIVA.ObjectSet.Read(ret[0].content.buffer);
                         var texid = re[1];
                         var obj = re[0];
-                        console.timeEnd("loading objects")
-                        console.time("loading textures")
+                        timeEnd("loading objects")
+                        timeStart("loading textures")
                         var tex = DIVA.TextureSet.Read(ret[1].content.buffer);
-                        console.timeEnd("loading textures")
+                        timeEnd("loading textures")
                         console.log(obj)
                         console.log(tex)
                         window.DIVAobj = obj;
@@ -36,40 +109,34 @@
                         for (var i in texid){
                             window.DIVAtex[texid[i]] = tex[i];
                         }
-                        window.testf();
+                        init();
+                        animate();
                     }
                 }, false);
-            });
-    </script>
-    <script type="module">
-        var THREE = window.THREE;
-        import Stats from './node_modules/three/examples/jsm/libs/stats.module.js';
-        import  { DDSLoader } from './node_modules/three/examples/jsm/loaders/DDSLoader.js';
-        import { TrackballControls } from './node_modules/three/examples/jsm/controls/TrackballControls.js';
-            var camera, scene, renderer, controls, stats;
+            }
 
-        function test(){
-            init();
-            animate();
-        }
-        window.testf = test;
             function init() {
+                mlog("start initialize stage")
 				var canvas = document.createElement( 'canvas' );
-				var context = canvas.getContext( 'webgl2', { alpha: false, antialias: true } );
+				var context = canvas.getContext( 'webgl2', { alpha: true, antialias: true } );
 
-                renderer = new THREE.WebGLRenderer( { canvas: canvas, context: context });
+                renderer = new THREE.WebGLRenderer( { canvas: canvas, context: context, alpha: true });
                 renderer.setPixelRatio( window.devicePixelRatio );
                 renderer.setSize( window.innerWidth, window.innerHeight );
-                document.body.appendChild( renderer.domElement );
+                renderer.setClearColor(0xffffff, 0);
+                document.getElementById("main_display").innerHTML = "";
+                document.getElementById("main_display").appendChild(renderer.domElement)
                 scene = new THREE.Scene();
                 const fov = 75;
                 const aspect = 2; 
                 const near = 0.1;
                 const far = 100;
                 camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-                camera.position.z = 5;
+                camera.position.z = 2;
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
                 scene.add( camera );
-                controls = new TrackballControls( camera, renderer.domElement );
+                controls = new THREE.TrackballControls( camera, renderer.domElement );
                 controls.minDistance = 0.1;
                 controls.maxDistance = 8.0;
                 controls.dynamicDampingFactor = 0.1;
@@ -90,7 +157,7 @@
                     //var loader = new DDSLoader();
                     //return loader.load( 'test/Texture25.dds' );
                     default: 
-                    console.log( "Unsupported format: "+tex.SubTextures[0][0].Format);
+                    mlog( "Unsupported format: "+tex.SubTextures[0][0].Format);
                     return null;
                 }
                 for (var i = 0; i < tex.MipMapCount; i++)
@@ -116,7 +183,7 @@
 
                         var materialdata = obj.Materials[mesh.SubMeshes[0].MaterialIndex];
                         var material;
-                        console.log("Loading mesh "+mesh.Name+": type "+materialdata.Shader);
+                        mlog("----\nLoading mesh "+mesh.Name+": type "+materialdata.Shader);
                         
                         //map:Diffuse normalMap:Normal envMap:Reflection specularMap:Specular shininess:Shininess
 
@@ -139,6 +206,7 @@
 
                         if(materialdata.Normal.TextureId != -1){
                             var Normal = window.DIVAtex[materialdata.Normal.TextureId];
+                            mlog("Normal map not yet implemented.");
                             // TODO - ATI2 decode
                             //params.normalMap = loadTexture(Normal);
                         }
@@ -150,6 +218,7 @@
                         
                         if(materialdata.Reflection.TextureId != -1){
                             var Reflection = window.DIVAtex[materialdata.Reflection.TextureId];
+                            mlog("Reflection map not yet implemented.");
                             // TODO - map6
                             //params.envMap = loadTexture(Reflection);
                         }
