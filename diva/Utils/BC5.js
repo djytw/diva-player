@@ -18,7 +18,7 @@ class BC5{
         return (~~(~~(pos / 16) / (size / 4)) * 4 + (~~((pos % 16) / 4))) * size + ((~~(pos / 16) % (size / 4)) * 4 + (pos % 16) % 4);
     }
     static decode(data, width, height){
-        if (!data instanceof Uint8Array){
+        if (!(data instanceof Uint8Array)){
             return ;
         }
         var ret = new Uint8Array(width*height*3);

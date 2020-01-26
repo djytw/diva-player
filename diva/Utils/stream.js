@@ -101,11 +101,6 @@ class Stream{
         }
         return ret;
     }
-    getInt32(){
-        var r = this.dataView.getInt32(this.pc, this.endian);
-        this.pc += 4;
-        return r;
-    }
     getFloat32(){
         var r = this.dataView.getFloat32(this.pc, this.endian);
         this.pc += 4;

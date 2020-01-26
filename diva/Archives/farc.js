@@ -28,11 +28,12 @@ class FarcArchive{
         var sign = st.getString(4);
         var headsize = st.getUint32() + 0x08;
 
+        var fileInf, info;
         if (sign == "FArC"){
+            fileInf = [];
             st.getUint32();
-            var fileInf = [];
             while (st.getpos() < headsize){
-                var info = {};
+                info = {};
                 info.fname = st.getString();
                 info.offset = st.getUint32();
                 info.csize = st.getUint32();
@@ -47,8 +48,7 @@ class FarcArchive{
                 info.content = odata;
             }
         }else if (sign == "FARC"){
-            var fileInf = [];
-            
+            fileInf = [];
             var flags = st.getUint32();
             var isCompressed = ( flags & 2 ) != 0;
             var isEncrypted = ( flags & 4 ) != 0;
@@ -58,7 +58,7 @@ class FarcArchive{
             var entryCount = st.getUint32();
 
             while (st.getpos() < headsize){
-                var info = {};
+                info = {};
                 info.fname = st.getString();
                 info.offset = st.getUint32();
                 info.csize = st.getUint32();
