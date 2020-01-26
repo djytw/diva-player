@@ -182,8 +182,8 @@
                 return map;
             }
             function loadUncompressedTexture(tex) {
-                if( tex.SubTextures[0][0].Width != tex.SubTextures[0][0].Height)return;
-                var map = new THREE.DataTexture(DIVA.BC5.decode(tex.SubTextures[0][0].Data,tex.SubTextures[0][0].Width),tex.SubTextures[0][0].Width,tex.SubTextures[0][0].Width,THREE.RGBFormat );
+                //if( tex.SubTextures[0][0].Width != tex.SubTextures[0][0].Height)return;
+                var map = new THREE.DataTexture(DIVA.BC5.decode(tex.SubTextures[0][0].Data,tex.SubTextures[0][0].Width,tex.SubTextures[0][0].Height),tex.SubTextures[0][0].Width,tex.SubTextures[0][0].Height,THREE.RGBFormat );
                 //var map = new THREE.TextureLoader().load( 'Texture.png');
                 return map;
             }
