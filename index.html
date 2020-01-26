@@ -12,6 +12,11 @@
                 background:transparent;
                 z-index:1;
                 position:absolute;
+                display: flex;
+                text-align: center;
+                justify-content: center;
+                align-items: center;
+                font-size: 30px;
             }
             #main_log{
                 max-height:100vh;
@@ -37,10 +42,10 @@
         </style>
     </head>
     <body>
-        <div id="main_display" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);"></div>
+        <div id="main_display" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);">Please drag&drop .farc files here</div>
         <pre id="main_log"></pre>
         <script src="node_modules/pako/dist/pako.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="node_modules/three/build/three.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="node_modules/three/build/three.js" type="text/javascript" charset="utf-8"></script>
         <script src="build/bundle.js" type="text/javascript" charset="utf-8"></script>
         <script src="node_modules/three/examples/js/libs/stats.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="node_modules/three/examples/js/loaders/DDSLoader.js" type="text/javascript" charset="utf-8"></script>
@@ -149,17 +154,22 @@
                 window.addEventListener( 'resize', onWindowResize, false );
             }
             function loadTexture(tex){
-                var map = new THREE.CompressedTexture();
-                map.mipmaps = [];
                 switch (tex.SubTextures[0][0].Format){
-                    case 6: map.format = THREE.RGB_S3TC_DXT1_Format;break;
-                    case 9: map.format = THREE.RGBA_S3TC_DXT5_Format;break;
-                    //var loader = new DDSLoader();
-                    //return loader.load( 'test/Texture25.dds' );
+                    case 6: case 9: return loadCompressedTexture(tex);break;
+                    case 11: return loadUncompressedTexture(tex);break;
                     default: 
                     mlog( "Unsupported format: "+tex.SubTextures[0][0].Format);
                     return null;
                 }
+            }
+            function loadCompressedTexture(tex){
+                var map = new THREE.CompressedTexture();
+                map.mipmaps = [];
+                if (tex.SubTextures[0][0].Format == 6)
+                    map.format = THREE.RGB_S3TC_DXT1_Format;
+                else 
+                    map.format = THREE.RGBA_S3TC_DXT5_Format;
+
                 for (var i = 0; i < tex.MipMapCount; i++)
                     map.mipmaps.push({
                         "width": tex.SubTextures[0][i].Width,
@@ -169,6 +179,11 @@
                 map.image.width = map.mipmaps[0].width;
                 map.image.height = map.mipmaps[0].height;
                 map.version = 1;
+                return map;
+            }
+            function loadUncompressedTexture(tex) {
+                if( tex.SubTextures[0][0].Width != tex.SubTextures[0][0].Height)return;
+                var map = new THREE.DataTexture(DIVA.BC5.decode(tex.SubTextures[0][0].Data,tex.SubTextures[0][0].Width),tex.SubTextures[0][0].Width,tex.SubTextures[0][0].Width,THREE.RGBFormat );
                 return map;
             }
             function createScene() {
@@ -191,6 +206,7 @@
                         var params = {shininess, color:0xffffff};
 
                         if(materialdata.Diffuse.TextureId != -1){
+                            //mlog("Loading Diffuse map.")
                             var Diffuse = window.DIVAtex[materialdata.Diffuse.TextureId];
                             params.map = loadTexture(Diffuse);
                             if (Diffuse.SubTextures[0][0].Format == 9 && materialdata.Shader =="ITEM"){
@@ -206,20 +222,19 @@
 
                         if(materialdata.Normal.TextureId != -1){
                             var Normal = window.DIVAtex[materialdata.Normal.TextureId];
-                            mlog("Normal map not yet implemented.");
-                            // TODO - ATI2 decode
-                            //params.normalMap = loadTexture(Normal);
+                            //mlog("Loading Normal map.")
+                            params.normalMap = loadTexture(Normal);
                         }
                         
                         if(materialdata.Specular.TextureId != -1){
                             var Specular = window.DIVAtex[materialdata.Specular.TextureId];
+                            //mlog("Loading Specular map.")
                             params.specularMap = loadTexture(Specular);
                         }
                         
                         if(materialdata.Reflection.TextureId != -1){
                             var Reflection = window.DIVAtex[materialdata.Reflection.TextureId];
-                            mlog("Reflection map not yet implemented.");
-                            // TODO - map6
+                            //mlog("Loading envMap map.")
                             //params.envMap = loadTexture(Reflection);
                         }
                         
