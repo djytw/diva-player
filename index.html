@@ -50,6 +50,7 @@
         <script src="node_modules/three/examples/js/libs/stats.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="node_modules/three/examples/js/loaders/DDSLoader.js" type="text/javascript" charset="utf-8"></script>
         <script src="node_modules/three/examples/js/controls/TrackballControls.js" type="text/javascript" charset="utf-8"></script>
+        <script src="node_modules/three/examples/js/utils/BufferGeometryUtils.js" type="text/javascript" charset="utf-8"></script>
         <script>
             var DIVA = require("DIVA");
             var camera, scene, renderer, controls, stats;
@@ -121,6 +122,7 @@
             }
 
             function init() {
+                mlog("Starting THREE.js r-"+THREE.REVISION);
                 mlog("start initialize stage")
 				var canvas = document.createElement( 'canvas' );
 				var context = canvas.getContext( 'webgl2', { alpha: true, antialias: true } );
@@ -242,9 +244,8 @@
 
                         material = new THREE.MeshPhongMaterial(params);
 
-
-                        var mes = new THREE.Mesh( bufferGeometry, material );
-                        mes.drawMode = THREE.TriangleStripDrawMode;
+                        var bufferGeometryNew = THREE.BufferGeometryUtils.toTrianglesDrawMode(bufferGeometry, THREE.TriangleStripDrawMode );
+                        var mes = new THREE.Mesh( bufferGeometryNew, material );
                         scene.add( mes );
                     }
                 }
