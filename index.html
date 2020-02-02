@@ -55,6 +55,8 @@
             var DIVA = require("DIVA");
             var camera, scene, renderer, controls, stats;
 
+            init();
+            animate();
             function dropHandler(ev) {
                 ev.preventDefault();
                 if (ev.dataTransfer.items) {
@@ -112,11 +114,11 @@
                         console.log(tex)
                         window.DIVAobj = obj;
                         window.DIVAtex = [];
+                        window.DIVAmesh = [];
                         for (var i in texid){
                             window.DIVAtex[texid[i]] = tex[i];
                         }
-                        init();
-                        animate();
+                        createMesh();
                     }
                 }, false);
             }
@@ -150,9 +152,10 @@
                 scene.add( new THREE.AmbientLight( 0xffffff, 0.2 ) );
                 var light = new THREE.PointLight( 0xffffff, 0.7 );
                 camera.add( light );
-                createScene();
                 stats = new Stats();
                 document.body.appendChild( stats.dom );
+                stats.dom.style.left = "";
+                stats.dom.style.right = "0px";
                 window.addEventListener( 'resize', onWindowResize, false );
             }
             function loadTexture(tex){
@@ -189,7 +192,7 @@
                 //var map = new THREE.TextureLoader().load( 'Texture.png');
                 return map;
             }
-            function createScene() {
+            function createMesh() {
                 for (var obj of window.DIVAobj){
                     for(var mesh of obj.Meshes){
                         var bufferGeometry = new THREE.BufferGeometry();
@@ -212,15 +215,16 @@
                             //mlog("Loading Diffuse map.")
                             var Diffuse = window.DIVAtex[materialdata.Diffuse.TextureId];
                             params.map = loadTexture(Diffuse);
-                            if (Diffuse.SubTextures[0][0].Format == 9 && materialdata.Shader =="ITEM"){
+                            if (Diffuse.SubTextures[0][0].Format == 9){
                                 params.blending = THREE.AdditiveBlending;
+                                params.transparent=true
+                            }
+                            if (Diffuse.SubTextures[0][0].Format == 9 && materialdata.Shader =="SKIN"){
+                                params.blending = THREE.NormalBlending;
                             }
                             if (Diffuse.SubTextures[0][0].Format == 9 && materialdata.Shader =="CLOTH"){
-                                params.blending = THREE.AdditiveBlending;
                                 params.side=THREE.DoubleSide
                             }
-                            if (Diffuse.SubTextures[0][0].Format == 9)
-                                params.transparent=true
                         }
 
                         if(materialdata.Normal.TextureId != -1){
@@ -246,7 +250,10 @@
 
                         var bufferGeometryNew = THREE.BufferGeometryUtils.toTrianglesDrawMode(bufferGeometry, THREE.TriangleStripDrawMode );
                         var mes = new THREE.Mesh( bufferGeometryNew, material );
-                        scene.add( mes );
+                        if (window.DIVAmesh[mesh.Name] != undefined){
+                            mlog("Warning: overwrite mesh that have same name: "+mesh.Name);
+                        }
+                        window.DIVAmesh[mesh.Name] = mes;
                     }
                 }
             }
