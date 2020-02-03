@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
         <style>
             *{
                 margin:0;
@@ -37,12 +38,45 @@
                 width:0px;
             }
             body{
-                background: #ccc;
+                background-image: 
+                    linear-gradient(45deg, rgba(0,0,0,0.14) 25%, transparent 25%), 
+                    linear-gradient(-45deg, rgba(0,0,0,0.14) 25%, transparent 25%), 
+                    linear-gradient(45deg, transparent 75%, rgba(0,0,0,0.14) 75%), 
+                    linear-gradient(-45deg, transparent 75%, rgba(0,0,0,0.14) 75%);
+                background-size: 20px 20px;
+                background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            }
+            #navbar{
+                position:fixed;
+                right:0px;
+                top:0px;
+                height:100vh;
+                width:300px;
+                border-left: 1px solid rgba(0,0,0,0.14);
+                background:white;
+                -webkit-box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12), 0 1px 5px 0 rgba(0,0,0,0.2);
+                box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12), 0 1px 5px 0 rgba(0,0,0,0.2);
+                z-index:999;
+            }
+            #notify{
+                color:#aaa;
+                font-weight: 600;
+                font-size: 2rem;
+                margin: auto;
+                position:absolute;
+                left:0px;
+                top:0px;
+                z-index: -1;
+                padding:30vh;
             }
         </style>
     </head>
     <body>
-        <div id="main_display" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);">Please drag&drop .farc files here</div>
+        <div id="navbar">
+
+        </div>
+        <div id="notify">Please drag&drop .farc files here</div>
+        <div id="main_display" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);"></div>
         <pre id="main_log"></pre>
         <script src="node_modules/pako/dist/pako.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="node_modules/three/build/three.js" type="text/javascript" charset="utf-8"></script>
@@ -113,9 +147,10 @@
                         console.log(obj)
                         console.log(tex)
                         window.DIVAobj = obj;
-                        window.DIVAtex = [];
-                        window.DIVAmesh = [];
                         for (var i in texid){
+                            if (window.DIVAtex[texid[i]] != undefined){
+                                mlog("Warning: overwrite texture that have same ID: "+texid[i]);
+                            }
                             window.DIVAtex[texid[i]] = tex[i];
                         }
                         createMesh();
@@ -125,7 +160,6 @@
 
             function init() {
                 mlog("Starting THREE.js r-"+THREE.REVISION);
-                mlog("start initialize stage")
 				var canvas = document.createElement( 'canvas' );
 				var context = canvas.getContext( 'webgl2', { alpha: true, antialias: true } );
 
@@ -157,24 +191,24 @@
                 stats.dom.style.left = "";
                 stats.dom.style.right = "0px";
                 window.addEventListener( 'resize', onWindowResize, false );
+                window.DIVAtex = [];
+                window.DIVAmesh = [];
+                mlog("Stage init OK!")
             }
             function loadTexture(tex){
                 switch (tex.SubTextures[0][0].Format){
-                    case 6: case 9: return loadCompressedTexture(tex);break;
-                    case 11: return loadUncompressedTexture(tex);break;
+                    case 6: return loadDXT1(tex);break;
+                    case 9: return loadDXT5(tex);break; 
+                    case 11: return loadBC5(tex);break;
                     default: 
                     mlog( "Unsupported format: "+tex.SubTextures[0][0].Format);
                     return null;
                 }
             }
-            function loadCompressedTexture(tex){
+            function loadDXT1(tex){
                 var map = new THREE.CompressedTexture();
                 map.mipmaps = [];
-                if (tex.SubTextures[0][0].Format == 6)
-                    map.format = THREE.RGB_S3TC_DXT1_Format;
-                else 
-                    map.format = THREE.RGBA_S3TC_DXT5_Format;
-
+                map.format = THREE.RGB_S3TC_DXT1_Format;
                 for (var i = 0; i < tex.MipMapCount; i++)
                     map.mipmaps.push({
                         "width": tex.SubTextures[0][i].Width,
@@ -184,16 +218,30 @@
                 map.image.width = map.mipmaps[0].width;
                 map.image.height = map.mipmaps[0].height;
                 map.version = 1;
+                map.wrapS = THREE.RepeatWrapping;
+                map.wrapT = THREE.RepeatWrapping;
                 return map;
             }
-            function loadUncompressedTexture(tex) {
-                //if( tex.SubTextures[0][0].Width != tex.SubTextures[0][0].Height)return;
-                var map = new THREE.DataTexture(DIVA.BC5.decode(tex.SubTextures[0][0].Data,tex.SubTextures[0][0].Width,tex.SubTextures[0][0].Height),tex.SubTextures[0][0].Width,tex.SubTextures[0][0].Height,THREE.RGBFormat );
-                //var map = new THREE.TextureLoader().load( 'Texture.png');
+            function loadBC5(tex) {
+                var map = new THREE.DataTexture(DIVA.CompressedTexture.BC5decode(tex.SubTextures[0][0].Data,tex.SubTextures[0][0].Width,tex.SubTextures[0][0].Height),tex.SubTextures[0][0].Width,tex.SubTextures[0][0].Height,THREE.RGBFormat );
+                map.wrapS = THREE.RepeatWrapping;
+                map.wrapT = THREE.RepeatWrapping;
+                return map;
+            }
+            function loadDXT5(tex) {
+                //DXT5 support in WebGL is quite bad, use SW decode
+                var map = new THREE.DataTexture(DIVA.CompressedTexture.DXT5decode(tex.SubTextures[0][0].Data,tex.SubTextures[0][0].Width,tex.SubTextures[0][0].Height),tex.SubTextures[0][0].Width,tex.SubTextures[0][0].Height,THREE.RGBAFormat );
+                map.wrapS = THREE.RepeatWrapping;
+                map.wrapT = THREE.RepeatWrapping;
                 return map;
             }
             function createMesh() {
                 for (var obj of window.DIVAobj){
+                    if (window.DIVAmesh[obj.name] != undefined){
+                        mlog("Warning: overwrite object set: " + obj.name);
+                    }
+                    window.DIVAmesh[obj.name] = [];
+                    mlog("Loading Object Set: " + obj.name);
                     for(var mesh of obj.Meshes){
                         var bufferGeometry = new THREE.BufferGeometry();
                         bufferGeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( mesh.Vertex, 3 ) );
@@ -204,7 +252,7 @@
 
                         var materialdata = obj.Materials[mesh.SubMeshes[0].MaterialIndex];
                         var material;
-                        mlog("Loading mesh "+mesh.Name+": type "+materialdata.Shader);
+                        mlog("Loading "+mesh.Name);
                         
                         //map:Diffuse normalMap:Normal envMap:Reflection specularMap:Specular shininess:Shininess
 
@@ -224,6 +272,7 @@
                             }
                             if (Diffuse.SubTextures[0][0].Format == 9 && materialdata.Shader =="CLOTH"){
                                 params.side=THREE.DoubleSide
+                                params.blending = THREE.NormalBlending;
                             }
                         }
 
@@ -250,10 +299,10 @@
 
                         var bufferGeometryNew = THREE.BufferGeometryUtils.toTrianglesDrawMode(bufferGeometry, THREE.TriangleStripDrawMode );
                         var mes = new THREE.Mesh( bufferGeometryNew, material );
-                        if (window.DIVAmesh[mesh.Name] != undefined){
+                        if (window.DIVAmesh[obj.name][mesh.Name] != undefined){
                             mlog("Warning: overwrite mesh that have same name: "+mesh.Name);
                         }
-                        window.DIVAmesh[mesh.Name] = mes;
+                        window.DIVAmesh[obj.name][mesh.Name] = mes;
                     }
                 }
             }

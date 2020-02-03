@@ -12,7 +12,7 @@ DIVA.TextureSet = require('./diva/Textures/TextureSet');
 DIVA.Texture = require('./diva/Textures/Texture');
 DIVA.SubTexture = require('./diva/Textures/SubTexture');
 DIVA.Utils = require('./diva/Utils/util');
-DIVA.BC5 = require('./diva/Utils/BC5');
+DIVA.CompressedTexture = require('./diva/Utils/CompressedTexture');
 
 //const fs = require('fs')
 
