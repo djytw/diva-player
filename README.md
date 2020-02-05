@@ -1,6 +1,6 @@
 # diva-player
 
-A rewrite of [MikuMikuLibrary](https://github.com/blueskythlikesclouds/MikuMikuLibrary) in JavaScript.
+A rewrite of [MikuMikuLibrary](https://github.com/blueskythlikesclouds/MikuMikuLibrary) in JavaScript. (To load farc file in browsers)
 
 # Usage
 
