@@ -2,6 +2,7 @@
 <html>
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+        <link rel="stylesheet" href="assets/metroui.css">
         <style>
             *{
                 margin:0;
@@ -20,22 +21,16 @@
                 font-size: 30px;
             }
             #main_log{
-                max-height:100vh;
-                overflow-y:scroll;
-                width:100vh;
+                width:100%;
+                white-space: pre-wrap;
                 background:transparent;
                 border:0;
                 color:black;
-                position:absolute;
-                left: 0px;
-                bottom: 0px;
                 min-height: 1rem;
                 font-size:10px;
-                z-index:0;
                 font-family: Cascadia, Consolas, 'Ubuntu Mono', monospace;
-            }
-            #main_log::-webkit-scrollbar{
-                width:0px;
+                max-height:80vh;
+                overflow-y: auto;
             }
             body{
                 background-image: 
@@ -51,12 +46,22 @@
                 right:0px;
                 top:0px;
                 height:100vh;
-                width:300px;
+                width:400px;
                 border-left: 1px solid rgba(0,0,0,0.14);
                 background:white;
                 -webkit-box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12), 0 1px 5px 0 rgba(0,0,0,0.2);
                 box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12), 0 1px 5px 0 rgba(0,0,0,0.2);
                 z-index:999;
+                overflow-y: scroll;
+                padding:0;
+                color:black;
+                transition: transform .2s ease;
+            }
+            #navbar.hidden{
+                transform: translateX(400px);
+            }
+            #navbar::-webkit-scrollbar{
+                width:0;
             }
             #notify{
                 color:#aaa;
@@ -69,15 +74,111 @@
                 z-index: -1;
                 padding:30vh;
             }
+            .accordion>.frame>.heading{
+                background: rgba(0,0,0,0.06);
+            }
+            .accordion>.frame>.heading:hover{
+                background: rgba(0,0,0,0.12);
+            }
+            #fps{
+                padding:0px
+            }
+            #nav-btn{
+                position: fixed;
+                top: 0px;
+                right: 399px;
+                height: 60px;
+                width: 60px;
+                display: flex !important;
+                text-align: center;
+                justify-content: center;
+                align-items: center;
+                flex-direction:column;
+                background: #eee;
+                border-bottom:1px solid #ccc;
+                border-left:1px solid #ccc;
+                display: block;
+                z-index: 999;
+                -webkit-box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12), 0 1px 5px 0 rgba(0,0,0,0.2);
+                box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12), 0 1px 5px 0 rgba(0,0,0,0.2);
+                transition: transform .2s ease;
+                cursor: pointer;
+            }
+            #nav-btn.hidden{
+                transform: translateX(400px);
+            }
+            #nav-btn *{
+                display: block;
+            }
+            #navfile{
+                display: none;
+            }
+            #navfilebtn{
+                border: 0;
+                display:inline-block;
+                padding:5px 8px;
+                color:#fff;
+                background-color: #03a9f4 ;
+                border-radius: 6px;
+                cursor: pointer;
+            }
         </style>
     </head>
     <body>
+        <div id="nav-btn" onclick="toggleNav()">
+            <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0z" fill="none"/><path fill="#000" d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        </div>
         <div id="navbar">
-
+            <div data-role="accordion" data-material="true" data-one-frame="false">
+                <div class="frame active">
+                    <div class="heading">Files</div>
+                    <div class="content">
+                        Choose a file from your device...<br>
+                        <label for="navfile" id="navfilebtn">
+                            Choose a file
+                        </label>
+                        <input type="file" id="navfile" multiple onchange="fileHandler(event)"/>
+                        <br>
+                        Or choose example files...<br>
+                    </div>
+                </div>
+                <div class="frame">
+                    <div class="heading">Object Explorer</div>
+                    <div class="content">
+                        <ul data-role="treeview">
+                        <li>
+                            <input type="checkbox" data-role="checkbox" data-caption="Play video" title="">
+                            <ul>
+                                <li><input type="checkbox" data-role="checkbox" data-caption="AVI" title=""></li>
+                                <li><input type="checkbox" data-role="checkbox" data-caption="MPEG" title=""></li>
+                                <li><input checked type="checkbox" data-role="checkbox" data-caption="VIDX" title=""></li>
+                                <li><input type="checkbox" data-role="checkbox" data-caption="MP4" title=""></li>
+                                <li><input checked type="checkbox" data-role="checkbox" data-caption="XVID" title=""></li>
+                            </ul>
+                        </li>
+                        <li><input type="checkbox" data-role="checkbox" data-caption="Play audio" title=""></li>
+                        <li>
+                            <input type="checkbox" data-role="checkbox" data-caption="Subtitles" title="">
+                            <ul>
+                                <li><input type="checkbox" data-role="checkbox" data-caption="English" title=""></li>
+                                <li><input checked type="checkbox" data-role="checkbox" data-caption="Ukrainian" title=""></li>
+                                <li><input type="checkbox" data-role="checkbox" data-caption="Dutch" title=""></li>
+                            </ul>
+                        </li>
+                    </ul>
+                    </div>
+                </div>
+                <div class="frame">
+                    <div class="heading">Log</div>
+                    <div class="content" id="fps">
+                        <pre id="main_log"></pre>
+                    </div>
+                </div>
+            </div>
         </div>
         <div id="notify">Please drag&drop .farc files here</div>
         <div id="main_display" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);"></div>
-        <pre id="main_log"></pre>
+        <script src="assets/metroui.js"></script>
         <script src="node_modules/pako/dist/pako.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="node_modules/three/build/three.js" type="text/javascript" charset="utf-8"></script>
         <script src="build/bundle.js" type="text/javascript" charset="utf-8"></script>
@@ -88,9 +189,29 @@
         <script>
             var DIVA = require("DIVA");
             var camera, scene, renderer, controls, stats;
-
-            init();
-            animate();
+            $(document).ready(function(){
+                init();
+                animate();
+            })
+            function toggleNav(){
+                var btn = document.getElementById("nav-btn");
+                var nav = document.getElementById("navbar");
+                if (btn.classList.contains("hidden")){
+                    btn.classList.remove("hidden");
+                    nav.classList.remove("hidden");
+                }else{
+                    btn.classList.add("hidden");
+                    nav.classList.add("hidden");
+                }
+            }
+            function fileHandler(ev){
+                console.log(ev)
+                if (ev.target.files){
+                    for (var i = 0; i < ev.target.files.length; i++) {
+                        openFile(ev.target.files[i]);
+                    }
+                }
+            }
             function dropHandler(ev) {
                 ev.preventDefault();
                 if (ev.dataTransfer.items) {
@@ -98,7 +219,6 @@
                         if (ev.dataTransfer.items[i].kind === 'file') {
                             var file = ev.dataTransfer.items[i].getAsFile();
                             openFile(file);
-                            break;
                         }
                     }
                 }
@@ -144,16 +264,14 @@
                         timeStart("loading textures")
                         var tex = DIVA.TextureSet.Read(ret[1].content.buffer);
                         timeEnd("loading textures")
-                        console.log(obj)
-                        console.log(tex)
-                        window.DIVAobj = obj;
-                        for (var i in texid){
-                            if (window.DIVAtex[texid[i]] != undefined){
-                                mlog("Warning: overwrite texture that have same ID: "+texid[i]);
-                            }
-                            window.DIVAtex[texid[i]] = tex[i];
+                        var i = 0;
+                        var texes = {};
+                        for (var a of texid){
+                            texes[a] = tex[i++];
                         }
-                        createMesh();
+                        console.log(obj)
+                        console.log(texes)
+                        createMesh(obj,texes);
                     }
                 }, false);
             }
@@ -187,12 +305,12 @@
                 var light = new THREE.PointLight( 0xffffff, 0.7 );
                 camera.add( light );
                 stats = new Stats();
-                document.body.appendChild( stats.dom );
+                document.getElementById("fps").append( stats.dom );
                 stats.dom.style.left = "";
                 stats.dom.style.right = "0px";
+                stats.dom.style.position = "absolute";
                 window.addEventListener( 'resize', onWindowResize, false );
-                window.DIVAtex = [];
-                window.DIVAmesh = [];
+                window.DIVAmesh = {};
                 mlog("Stage init OK!")
             }
             function loadTexture(tex){
@@ -235,12 +353,12 @@
                 map.wrapT = THREE.RepeatWrapping;
                 return map;
             }
-            function createMesh() {
-                for (var obj of window.DIVAobj){
+            function createMesh(objs,texes) {
+                for (var obj of objs){
                     if (window.DIVAmesh[obj.name] != undefined){
                         mlog("Warning: overwrite object set: " + obj.name);
                     }
-                    window.DIVAmesh[obj.name] = [];
+                    window.DIVAmesh[obj.name] = {};
                     mlog("Loading Object Set: " + obj.name);
                     for(var mesh of obj.Meshes){
                         var bufferGeometry = new THREE.BufferGeometry();
@@ -261,7 +379,7 @@
 
                         if(materialdata.Diffuse.TextureId != -1){
                             //mlog("Loading Diffuse map.")
-                            var Diffuse = window.DIVAtex[materialdata.Diffuse.TextureId];
+                            var Diffuse = texes[materialdata.Diffuse.TextureId];
                             params.map = loadTexture(Diffuse);
                             if (Diffuse.SubTextures[0][0].Format == 9){
                                 params.blending = THREE.AdditiveBlending;
@@ -277,19 +395,19 @@
                         }
 
                         if(materialdata.Normal.TextureId != -1){
-                            var Normal = window.DIVAtex[materialdata.Normal.TextureId];
+                            var Normal = texes[materialdata.Normal.TextureId];
                             //mlog("Loading Normal map.")
                             params.normalMap = loadTexture(Normal);
                         }
                         
                         if(materialdata.Specular.TextureId != -1){
-                            var Specular = window.DIVAtex[materialdata.Specular.TextureId];
+                            var Specular = texes[materialdata.Specular.TextureId];
                             //mlog("Loading Specular map.")
                             params.specularMap = loadTexture(Specular);
                         }
                         
                         if(materialdata.Reflection.TextureId != -1){
-                            var Reflection = window.DIVAtex[materialdata.Reflection.TextureId];
+                            var Reflection = texes[materialdata.Reflection.TextureId];
                             //mlog("Loading envMap map.")
                             //params.envMap = loadTexture(Reflection);
                         }
@@ -317,7 +435,6 @@
                 stats.update();
                 renderer.render( scene, camera );
             }
-
         </script>
     </body>
 </html>
