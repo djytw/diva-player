@@ -70,9 +70,11 @@
                 margin: auto;
                 position:absolute;
                 left:0px;
-                top:0px;
+                top:50%;
+                transform: translateY(-50%);
                 z-index: -1;
-                padding:30vh;
+                width:calc(100vw - 400px);
+                text-align: center;
             }
             .accordion>.frame>.heading{
                 background: rgba(0,0,0,0.06);
@@ -133,42 +135,30 @@
                 <div class="frame active">
                     <div class="heading">Files</div>
                     <div class="content">
-                        Choose a file from your device...<br>
+                        Choose a FARC file from your device...<br>
+                        (Only support pd arcade (ft) now...)<br>
                         <label for="navfile" id="navfilebtn">
                             Choose a file
                         </label>
                         <input type="file" id="navfile" multiple onchange="fileHandler(event)"/>
                         <br>
-                        Or choose example files...<br>
+                        Or use demo files...<br>
+                        <a href="javascript:openPath('assets/mikitm000.farc')">mikitm000.farc</a>
+                        <a href="javascript:openPath('assets/mikitm001.farc')">mikitm001.farc</a>
+                        <a href="javascript:openPath('assets/mikitm301.farc')">mikitm301.farc</a>
+                        <a href="javascript:openPath('assets/mikitm500.farc')">mikitm500.farc</a>
+                        <a href="javascript:openPath('assets/mikitm543.farc')">mikitm543.farc</a>
+                        <a href="javascript:openPath('assets/stgd2ns059.farc')">stgd2ns059.farc</a>
                     </div>
                 </div>
-                <div class="frame">
+                <div class="frame active">
                     <div class="heading">Object Explorer</div>
                     <div class="content">
-                        <ul data-role="treeview">
-                        <li>
-                            <input type="checkbox" data-role="checkbox" data-caption="Play video" title="">
-                            <ul>
-                                <li><input type="checkbox" data-role="checkbox" data-caption="AVI" title=""></li>
-                                <li><input type="checkbox" data-role="checkbox" data-caption="MPEG" title=""></li>
-                                <li><input checked type="checkbox" data-role="checkbox" data-caption="VIDX" title=""></li>
-                                <li><input type="checkbox" data-role="checkbox" data-caption="MP4" title=""></li>
-                                <li><input checked type="checkbox" data-role="checkbox" data-caption="XVID" title=""></li>
-                            </ul>
-                        </li>
-                        <li><input type="checkbox" data-role="checkbox" data-caption="Play audio" title=""></li>
-                        <li>
-                            <input type="checkbox" data-role="checkbox" data-caption="Subtitles" title="">
-                            <ul>
-                                <li><input type="checkbox" data-role="checkbox" data-caption="English" title=""></li>
-                                <li><input checked type="checkbox" data-role="checkbox" data-caption="Ukrainian" title=""></li>
-                                <li><input type="checkbox" data-role="checkbox" data-caption="Dutch" title=""></li>
-                            </ul>
-                        </li>
-                    </ul>
+                        <ul data-role="treeview" data-on-check-click="onCheckClick" id="objshow">
+                        </ul>
                     </div>
                 </div>
-                <div class="frame">
+                <div class="frame active">
                     <div class="heading">Log</div>
                     <div class="content" id="fps">
                         <pre id="main_log"></pre>
@@ -193,6 +183,27 @@
                 init();
                 animate();
             })
+            function onCheckClick(state, elem, tree){
+                var id = $(elem).id();
+                if ($(tree).children("ul").length == 0){
+                    var set = id.split("-")[1];
+                    var obj = id.split("-")[2];
+                    if(state)
+                        scene.add(window.DIVAmesh[set][obj]);
+                    else
+                        scene.remove(window.DIVAmesh[set][obj]);
+                }else{
+                    var set = id.split("-")[1];
+                    if(state)
+                    for(var obj of Object.keys(window.DIVAmesh[set])){
+                        scene.add(window.DIVAmesh[set][obj]);
+                    }
+                    else
+                    for(var obj of Object.keys(window.DIVAmesh[set])){
+                        scene.remove(window.DIVAmesh[set][obj]);
+                    }
+                }
+            }
             function toggleNav(){
                 var btn = document.getElementById("nav-btn");
                 var nav = document.getElementById("navbar");
@@ -205,7 +216,6 @@
                 }
             }
             function fileHandler(ev){
-                console.log(ev)
                 if (ev.target.files){
                     for (var i = 0; i < ev.target.files.length; i++) {
                         openFile(ev.target.files[i]);
@@ -248,32 +258,60 @@
                 const reader = new FileReader();
                 reader.readAsArrayBuffer(file);
                 reader.addEventListener('load', function () {
-                    timeEnd("load file")
-                    timeStart("extract farc")
-                    var ret = DIVA.FarcArchive.Read(reader.result);
-                    timeEnd("extract farc")
-                    str = "farc contains " + ret.length + " files: ";
-                    for (f of ret) str += f.fname + ", ";
-                    mlog(str);
-                    if (ret[0].fname.endsWith("_obj.bin") && ret[1].fname.endsWith("_tex.bin")){
-                        timeStart("loading objects")
-                        var re = DIVA.ObjectSet.Read(ret[0].content.buffer);
-                        var texid = re[1];
-                        var obj = re[0];
-                        timeEnd("loading objects")
-                        timeStart("loading textures")
-                        var tex = DIVA.TextureSet.Read(ret[1].content.buffer);
-                        timeEnd("loading textures")
-                        var i = 0;
-                        var texes = {};
-                        for (var a of texid){
-                            texes[a] = tex[i++];
-                        }
-                        console.log(obj)
-                        console.log(texes)
-                        createMesh(obj,texes);
-                    }
+                    timeEnd("load file");
+                    readFARC(reader.result)
                 }, false);
+            }
+            function openPath(path){
+                var html_content =
+                    "<h3>Wait a moment...</h3>" +
+                    "<p>File is downloading...</p>";
+                var infobox=Metro.infobox.create(html_content);
+                var oReq = new XMLHttpRequest();
+                oReq.open("GET", path, true);
+                oReq.responseType = "arraybuffer";
+
+                oReq.onload = function (oEvent) {
+                    var arrayBuffer = oReq.response; 
+                    if (arrayBuffer) {
+                        readFARC(arrayBuffer);
+                        infobox.data("infobox").close();
+                    }
+                };
+                oReq.addEventListener("progress", function (oEvent) {
+                    if (oEvent.lengthComputable) {
+                        var percentComplete = Math.floor(oEvent.loaded / oEvent.total * 100);
+                        infobox.children("div").children("p").html("File is downloading..."+percentComplete+"% Completed.");
+                    }
+                });
+
+                oReq.send(null);
+            }
+            function readFARC(data){
+                timeStart("extract farc")
+                var ret = DIVA.FarcArchive.Read(data);
+                timeEnd("extract farc")
+                str = "farc contains " + ret.length + " files: ";
+                for (f of ret) str += f.fname + ", ";
+                mlog(str);
+                if (ret[0].fname.endsWith("_obj.bin") && ret[1].fname.endsWith("_tex.bin")){
+                    timeStart("loading objects")
+                    var re = DIVA.ObjectSet.Read(ret[0].content.buffer);
+                    var texid = re[1];
+                    var obj = re[0];
+                    timeEnd("loading objects")
+                    timeStart("loading textures")
+                    var tex = DIVA.TextureSet.Read(ret[1].content.buffer);
+                    timeEnd("loading textures")
+                    var i = 0;
+                    var texes = {};
+                    for (var a of texid){
+                        texes[a] = tex[i++];
+                    }
+                    console.log(obj)
+                    console.log(texes)
+                    createMesh(obj,texes);
+                }
             }
 
             function init() {
@@ -357,8 +395,12 @@
                 for (var obj of objs){
                     if (window.DIVAmesh[obj.name] != undefined){
                         mlog("Warning: overwrite object set: " + obj.name);
+                        $("#objshow").data("treeview").del($("#objshow-"+obj.name));
                     }
                     window.DIVAmesh[obj.name] = {};
+                    $("#objshow").data("treeview").addTo(null,{
+                        html: '<input data-role=checkbox data-caption="' + obj.name + '" id="objshow-' + obj.name + '">'
+                    });
                     mlog("Loading Object Set: " + obj.name);
                     for(var mesh of obj.Meshes){
                         var bufferGeometry = new THREE.BufferGeometry();
@@ -386,6 +428,9 @@
                                 params.transparent=true
                             }
                             if (Diffuse.SubTextures[0][0].Format == 9 && materialdata.Shader =="SKIN"){
+                                params.blending = THREE.NormalBlending;
+                            }
+                            if (Diffuse.SubTextures[0][0].Format == 9 && materialdata.Shader =="HAIR"){
                                 params.blending = THREE.NormalBlending;
                             }
                             if (Diffuse.SubTextures[0][0].Format == 9 && materialdata.Shader =="CLOTH"){
@@ -418,11 +463,15 @@
                         var bufferGeometryNew = THREE.BufferGeometryUtils.toTrianglesDrawMode(bufferGeometry, THREE.TriangleStripDrawMode );
                         var mes = new THREE.Mesh( bufferGeometryNew, material );
                         if (window.DIVAmesh[obj.name][mesh.Name] != undefined){
-                            mlog("Warning: overwrite mesh that have same name: "+mesh.Name);
+                            mlog("Warning: overwrite mesh that have same name: "+mesh.Name+". This is considered as an error.");
                         }
+                        $("#objshow").data("treeview").addTo($("#objshow-"+obj.name).parent(),{
+                            html: '<input data-role=checkbox data-caption="' + mesh.Name + '" id="objshow-' + obj.name + '-' + mesh.Name + '">'
+                        });
                         window.DIVAmesh[obj.name][mesh.Name] = mes;
                     }
                 }
+                $("#objshow").data("treeview").toggleNode($("#objshow li.expanded"));
             }
             function onWindowResize() {
                 camera.aspect = window.innerWidth / window.innerHeight;
