@@ -180,6 +180,7 @@
             var DIVA = require("DIVA");
             var camera, scene, renderer, controls, stats;
             $(document).ready(function(){
+                window.DIVAtexes = [];
                 init();
                 animate();
             })
@@ -304,13 +305,25 @@
                     var tex = DIVA.TextureSet.Read(ret[1].content.buffer);
                     timeEnd("loading textures")
                     var i = 0;
-                    var texes = {};
+                    //var texes = {};
                     for (var a of texid){
-                        texes[a] = tex[i++];
+                        var tmp_tex = tex[i++];
+                        if (window.DIVAtexes[a] != undefined){
+                            // if new texture has higher resolution, replace the old one
+                            // but exists meshes will not update. so load texture FARC first.
+                            if (window.DIVAtexes[a].SubTextures[0][0].Data.length < tmp_tex.SubTextures[0][0].Data.length){
+                                //console.log("texture "+a+" exists, replace: "+window.DIVAtexes[a].SubTextures[0][0].Data.length+"->"+tmp_tex.SubTextures[0][0].Data.length);
+                                window.DIVAtexes[a] = tmp_tex;
+                            }else{
+                                //console.log("texture "+a+" exists, skip.");
+                            }
+                        }else{
+                            window.DIVAtexes[a] = tmp_tex;
+                        }
                     }
-                    console.log(obj)
-                    console.log(texes)
-                    createMesh(obj,texes);
+                    console.log(Object.keys(window.DIVAtexes));
+                    console.log(obj);
+                    createMesh(obj);
                 }
             }
 
@@ -391,7 +404,8 @@
                 map.wrapT = THREE.RepeatWrapping;
                 return map;
             }
-            function createMesh(objs,texes) {
+            function createMesh(objs) {
+                var texes = window.DIVAtexes;
                 for (var obj of objs){
                     if (window.DIVAmesh[obj.name] != undefined){
                         mlog("Warning: overwrite object set: " + obj.name);
@@ -431,6 +445,9 @@
                                 params.blending = THREE.NormalBlending;
                             }
                             if (Diffuse.SubTextures[0][0].Format == 9 && materialdata.Shader =="HAIR"){
+                                params.blending = THREE.NormalBlending;
+                            }
+                            if (Diffuse.SubTextures[0][0].Format == 9 && materialdata.Shader =="BLINN"){
                                 params.blending = THREE.NormalBlending;
                             }
                             if (Diffuse.SubTextures[0][0].Format == 9 && materialdata.Shader =="CLOTH"){
